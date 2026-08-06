@@ -529,12 +529,9 @@
       <div class="success-notice" id="success-notice" hidden>
         Thank you. Your acquisition inquiry has been submitted.
       </div>
-      <form class="offer-form" action="https://formsubmit.co/offers@justiciai.com" method="POST" id="offer-form">
-        <input type="hidden" name="_subject" value="New acquisition inquiry — JusticiaAI.com">
-        <input type="hidden" name="_next" value="https://justiciai.com/?submitted=1#offer-panel">
-        <input type="hidden" name="_template" value="table">
+      <form class="offer-form" id="offer-form" novalidate>
         <input type="hidden" name="inquiry_type" id="inquiry-type" value="Offer">
-        <input type="text" name="_honey" tabindex="-1" autocomplete="off" style="display:none">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
 
         <div class="form-field">
           <label for="name">Name</label>
@@ -564,6 +561,7 @@
         <div class="form-actions">
           <button class="btn" type="submit" id="submit-offer">Submit Offer</button>
           <span class="form-note">Confidential acquisition inquiry · Replies are handled by the domain owner.</span>
+          <span class="form-note" id="form-status" role="status" aria-live="polite"></span>
         </div>
       </form>
     </div>
@@ -581,6 +579,8 @@
   const inquiryType = document.getElementById('inquiry-type');
   const offerAmount = document.getElementById('offer-amount');
   const submitButton = document.getElementById('submit-offer');
+  const offerForm = document.getElementById('offer-form');
+  const formStatus = document.getElementById('form-status');
   const message = document.getElementById('message');
   const successNotice = document.getElementById('success-notice');
   const openButtons = document.querySelectorAll('[data-open-form]');
@@ -603,12 +603,47 @@
     button.addEventListener('click', () => openInquiryForm(button.dataset.openForm));
   });
 
-  const query = new URLSearchParams(window.location.search);
-  if (query.get('submitted') === '1') {
-    panel.hidden = false;
-    successNotice.hidden = false;
-    openButtons.forEach((button) => button.setAttribute('aria-expanded', 'true'));
-  }
+  offerForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    formStatus.textContent = '';
+    successNotice.hidden = true;
+
+    const formData = new FormData(offerForm);
+    const payload = Object.fromEntries(formData.entries());
+    const isOffer = payload.inquiry_type === 'Offer';
+
+    if (!payload.name || !payload.email || (isOffer && !payload.offer_amount_usd)) {
+      formStatus.textContent = isOffer
+        ? 'Please provide your name, email and offer amount.'
+        : 'Please provide your name and email.';
+      return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Submitting…';
+
+    try {
+      const response = await fetch('https://offers-api.justiciai.com/api/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to submit your inquiry.');
+
+      offerForm.reset();
+      inquiryType.value = isOffer ? 'Offer' : 'Question';
+      successNotice.hidden = false;
+      formStatus.textContent = result.reference ? `Reference: ${result.reference}` : '';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+      formStatus.textContent = error.message || 'Unable to submit your inquiry. Please try again.';
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = isOffer ? 'Submit Offer' : 'Send Inquiry';
+    }
+  });
 </script>
 
 </body>
