@@ -27,7 +27,3 @@ Required Worker variables/secrets:
 Configure `offers-api.justiciai.com` as the Worker's custom domain. Cloudflare
 Email Routing can continue forwarding `offers@justiciai.com` to the owner's
 Gmail inbox.
-
-
-
-
