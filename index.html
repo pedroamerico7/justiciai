@@ -332,6 +332,95 @@
   }
   .btn-secondary:hover{ border-color:var(--paper); }
 
+  .offer-panel{
+    margin-top:28px;
+    padding-top:28px;
+    border-top:1px solid rgba(240,233,216,0.25);
+  }
+
+  .offer-panel[hidden]{ display:none; }
+
+  .offer-form{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    position:relative;
+    z-index:1;
+  }
+
+  .form-field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+
+  .form-field.full{ grid-column:1 / -1; }
+
+  .form-field label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--paper);
+    opacity:0.78;
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea{
+    width:100%;
+    border:1px solid rgba(240,233,216,0.32);
+    border-radius:2px;
+    background:rgba(240,233,216,0.07);
+    color:var(--paper);
+    padding:12px 13px;
+    font:15px 'Source Serif 4', serif;
+    outline:none;
+  }
+
+  .form-field select option{ color:var(--ink); background:var(--paper); }
+  .form-field textarea{ min-height:120px; resize:vertical; }
+
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus{
+    border-color:var(--brass);
+    box-shadow:0 0 0 2px rgba(156,123,61,0.15);
+  }
+
+  .form-actions{
+    grid-column:1 / -1;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+
+  .form-actions .btn{ background:var(--brass); color:var(--ink); }
+
+  .form-note{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    line-height:1.55;
+    color:var(--paper);
+    opacity:0.58;
+  }
+
+  .success-notice{
+    margin-bottom:22px;
+    padding:13px 15px;
+    border:1px solid rgba(156,123,61,0.75);
+    color:var(--paper);
+    font-size:14px;
+  }
+
+  @media (max-width:560px){
+    .offer-form{ grid-template-columns:1fr; }
+    .form-field.full{ grid-column:auto; }
+    .form-actions{ grid-column:auto; }
+  }
+
   /* footer */
   footer{
     margin-top:40px;
@@ -432,8 +521,51 @@
     <h2>Petition for acquisition</h2>
     <p>This domain is sold as a single asset, transferred via standard escrow. Serious inquiries and offers welcome.</p>
     <div class="cta-row">
-      <a class="btn btn-primary" href="mailto:offers@justiciai.com?subject=Offer%20for%20justiciai.com">Make an Offer</a>
-      <a class="btn btn-secondary" href="mailto:offers@justiciai.com?subject=Question%20about%20justiciai.com">Ask a Question</a>
+      <button class="btn btn-primary" type="button" data-open-form="offer" aria-controls="offer-panel" aria-expanded="false">Make an Offer</button>
+      <button class="btn btn-secondary" type="button" data-open-form="question" aria-controls="offer-panel" aria-expanded="false">Ask a Question</button>
+    </div>
+
+    <div class="offer-panel" id="offer-panel" hidden>
+      <div class="success-notice" id="success-notice" hidden>
+        Thank you. Your acquisition inquiry has been submitted.
+      </div>
+      <form class="offer-form" action="https://formsubmit.co/offers@justiciai.com" method="POST" id="offer-form">
+        <input type="hidden" name="_subject" value="New acquisition inquiry — JusticiaAI.com">
+        <input type="hidden" name="_next" value="https://justiciai.com/?submitted=1#offer-panel">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="inquiry_type" id="inquiry-type" value="Offer">
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off" style="display:none">
+
+        <div class="form-field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" autocomplete="name" required>
+        </div>
+
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+
+        <div class="form-field">
+          <label for="company">Company</label>
+          <input id="company" name="company" type="text" autocomplete="organization">
+        </div>
+
+        <div class="form-field">
+          <label for="offer-amount">Offer amount (USD)</label>
+          <input id="offer-amount" name="offer_amount_usd" type="number" inputmode="decimal" min="1" step="1" placeholder="USD">
+        </div>
+
+        <div class="form-field full">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Tell us about your interest in JusticiaAI.com"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn" type="submit" id="submit-offer">Submit Offer</button>
+          <span class="form-note">Confidential acquisition inquiry · Replies are handled by the domain owner.</span>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -443,6 +575,41 @@
   </footer>
 
 </div>
+
+<script>
+  const panel = document.getElementById('offer-panel');
+  const inquiryType = document.getElementById('inquiry-type');
+  const offerAmount = document.getElementById('offer-amount');
+  const submitButton = document.getElementById('submit-offer');
+  const message = document.getElementById('message');
+  const successNotice = document.getElementById('success-notice');
+  const openButtons = document.querySelectorAll('[data-open-form]');
+
+  function openInquiryForm(kind) {
+    const isOffer = kind === 'offer';
+    panel.hidden = false;
+    inquiryType.value = isOffer ? 'Offer' : 'Question';
+    offerAmount.required = isOffer;
+    submitButton.textContent = isOffer ? 'Submit Offer' : 'Send Inquiry';
+    message.placeholder = isOffer
+      ? 'Optional context for your offer'
+      : 'What would you like to know about JusticiaAI.com?';
+    openButtons.forEach((button) => button.setAttribute('aria-expanded', 'true'));
+    window.setTimeout(() => document.getElementById('name').focus({ preventScroll: true }), 0);
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  openButtons.forEach((button) => {
+    button.addEventListener('click', () => openInquiryForm(button.dataset.openForm));
+  });
+
+  const query = new URLSearchParams(window.location.search);
+  if (query.get('submitted') === '1') {
+    panel.hidden = false;
+    successNotice.hidden = false;
+    openButtons.forEach((button) => button.setAttribute('aria-expanded', 'true'));
+  }
+</script>
 
 </body>
 </html>
