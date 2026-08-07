@@ -443,6 +443,11 @@
     flex-wrap:wrap;
     gap:8px;
   }
+  footer a{
+    color:inherit;
+    text-decoration:none;
+  }
+  footer a:hover{ text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -574,7 +579,7 @@
   </div>
 
   <footer>
-    <span>justiciai.com</span>
+    <span>justiciai.com · <a href="mailto:offers@justiciai.com">offers@justiciai.com</a></span>
     <span>Transfer via escrow · Domain only, no assets attached</span>
   </footer>
 
@@ -629,7 +634,7 @@
     submitButton.textContent = 'Submitting…';
 
     try {
-      const response = await fetch('https://justiciai-offers-6d28.pedroamericosa7.workers.dev/api/inquiry', {
+      const response = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
