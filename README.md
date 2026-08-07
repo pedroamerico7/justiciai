@@ -29,5 +29,3 @@ Required Cloudflare Pages variables/secrets:
 Cloudflare Email Routing can continue forwarding `offers@justiciai.com` to the
 owner's Gmail inbox. After adding or changing the variables, redeploy the Pages
 project so the Function receives the current configuration.
-
-
